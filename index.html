@@ -1,0 +1,3898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="ArtVault Pro - 智能艺术馆藏管理平台">
+    <meta name="theme-color" content="#d4af37">
+    <title>ArtVault Pro - 艺术馆智能馆藏管理</title>
+    <link rel="manifest" id="manifest-link">
+    <style>
+        /* 保持之前的所有样式不变 */
+        :root {
+            --bg-primary: #0f0f13;
+            --bg-secondary: #1a1a23;
+            --bg-card: #242433;
+            --bg-hover: #2d2d3f;
+            --accent-gold: #d4af37;
+            --accent-purple: #8b5cf6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6b6b78;
+            --border-color: #2d2d3f;
+            --border-light: #3a3a4d;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-lg: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-primary) 0%, #16161f 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-gold);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c5a030;
+        }
+
+        /* 骨架屏动画 */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-hover) 50%, var(--bg-secondary) 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+            border-radius: var(--radius-sm);
+        }
+
+        /* 核心布局 */
+        .container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* 侧边导航 - 增强版 */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            background: rgba(26, 26, 35, 0.95);
+        }
+
+        .sidebar.collapsed {
+            width: 70px;
+        }
+
+        .sidebar.collapsed .logo-text,
+        .sidebar.collapsed .nav-text,
+        .sidebar.collapsed .user-info {
+            display: none;
+        }
+
+        .sidebar.collapsed .nav-btn {
+            justify-content: center;
+            padding: 12px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent-gold);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .logo::before {
+            content: "🎨";
+            font-size: 28px;
+            filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.5));
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 8px;
+        }
+
+        .nav-btn {
+            width: 100%;
+            padding: 12px 15px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-secondary);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            text-align: left;
+            transition: var(--transition);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-btn::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: var(--accent-gold);
+            transform: scaleY(0);
+            transition: var(--transition);
+        }
+
+        .nav-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--border-light);
+        }
+
+        .nav-btn:hover::before {
+            transform: scaleY(1);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(90deg, rgba(212, 175, 55, 0.15), transparent);
+            color: var(--accent-gold);
+            border-color: rgba(212, 175, 55, 0.3);
+            font-weight: 600;
+        }
+
+        .nav-btn.active::before {
+            transform: scaleY(1);
+        }
+
+        .user-info {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 30px;
+            transition: var(--transition);
+        }
+
+        .main-content.expanded {
+            margin-left: 70px;
+        }
+
+        /* 顶部栏 */
+        .header {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            background: linear-gradient(135deg, var(--accent-gold), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* 按钮系统 */
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:active::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-gold), #f0c040);
+            color: var(--bg-primary);
+            box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent-purple);
+            color: var(--accent-purple);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--accent-red), #dc2626);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--accent-green), #059669);
+            color: white;
+        }
+
+        .btn-icon {
+            padding: 8px;
+            min-width: 36px;
+            justify-content: center;
+        }
+
+        /* 搜索和筛选 - 增强版 */
+        .search-section {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: var(--radius);
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            display: none;
+        }
+
+        .search-input:not(:placeholder-shown) + .search-clear {
+            display: block;
+        }
+
+        .filter-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-tag {
+            padding: 6px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        .filter-tag:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent-purple);
+        }
+
+        .filter-tag.active {
+            background: var(--accent-purple);
+            border-color: var(--accent-purple);
+            color: white;
+            font-weight: 600;
+        }
+
+        .filter-count {
+            margin-left: 8px;
+            font-size: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        /* 视图容器 */
+        .view-content {
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 统计面板 - 增强版 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-gold), var(--accent-purple));
+            transform: scaleX(0);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+            border-color: var(--accent-gold);
+        }
+
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--accent-gold);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-trend {
+            font-size: 11px;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .trend-up { color: var(--accent-green); }
+        .trend-down { color: var(--accent-red); }
+
+        /* 艺术品网格 - 画廊视图 */
+        .artwork-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .artwork-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .artwork-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-gold);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .artwork-image {
+            width: 100%;
+            height: 200px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: var(--text-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .artwork-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .artwork-card:hover .artwork-image img {
+            transform: scale(1.05);
+        }
+
+        .artwork-badges {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge-value {
+            background: rgba(212, 175, 55, 0.9);
+            color: var(--bg-primary);
+        }
+
+        .badge-premium {
+            background: rgba(139, 92, 246, 0.9);
+            color: white;
+        }
+
+        .badge-new {
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+        }
+
+        .artwork-info {
+            padding: 15px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .artwork-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .artwork-artist {
+            font-size: 14px;
+            color: var(--accent-gold);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .artwork-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .meta-item {
+            background: var(--bg-secondary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .artwork-value {
+            font-size: 14px;
+            color: var(--accent-gold);
+            font-weight: bold;
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .artwork-tags {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .tag {
+            font-size: 11px;
+            padding: 3px 8px;
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--accent-purple);
+            border-radius: 12px;
+            border: 1px solid var(--accent-purple);
+            font-weight: 500;
+        }
+
+        .artwork-actions {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .artwork-actions .btn {
+            flex: 1;
+            padding: 6px 8px;
+            font-size: 11px;
+            justify-content: center;
+        }
+
+        /* 列表视图 */
+        .data-table {
+            width: 100%;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .data-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background: var(--bg-secondary);
+            color: var(--accent-gold);
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table td {
+            font-size: 13px;
+            color: var(--text-secondary);
+            vertical-align: middle;
+        }
+
+        .data-table tr:hover {
+            background: var(--bg-hover);
+        }
+
+        .data-table tr:hover td {
+            color: var(--text-primary);
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .table-actions .btn {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        /* 模态框 - 增强版 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+
+        .modal-header h2 {
+            color: var(--accent-gold);
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .close-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+            background: var(--bg-hover);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        .form-hint {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .form-error {
+            font-size: 11px;
+            color: var(--accent-red);
+            margin-top: 4px;
+            display: none;
+        }
+
+        .form-group.error .form-input,
+        .form-group.error .form-select,
+        .form-group.error .form-textarea {
+            border-color: var(--accent-red);
+        }
+
+        .form-group.error .form-error {
+            display: block;
+        }
+
+        /* 文件上传增强 */
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-upload-label {
+            display: block;
+            padding: 40px;
+            background: var(--bg-secondary);
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius);
+            text-align: center;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-upload:hover .file-upload-label {
+            border-color: var(--accent-gold);
+            background: rgba(212, 175, 55, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .file-upload-label.dragover {
+            border-color: var(--accent-gold);
+            background: rgba(212, 175, 55, 0.1);
+            transform: scale(1.02);
+        }
+
+        .image-preview {
+            margin-top: 10px;
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: var(--radius);
+            display: none;
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+
+        .image-preview.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: var(--radius);
+        }
+
+        /* AI 建议面板 */
+        .ai-suggestions {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(212, 175, 55, 0.05));
+            padding: 15px;
+            border-radius: var(--radius);
+            border: 1px solid var(--accent-purple);
+            margin-top: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-suggestions::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-gold));
+        }
+
+        .ai-suggestions h4 {
+            color: var(--accent-purple);
+            margin-bottom: 10px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .suggestion-item {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            border-left: 2px solid var(--accent-purple);
+        }
+
+        .suggestion-item::before {
+            content: "✨";
+            font-size: 12px;
+            filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.5));
+        }
+
+        .value-estimate {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(139, 92, 246, 0.15));
+            padding: 15px;
+            border-radius: var(--radius);
+            text-align: center;
+            margin-top: 15px;
+            border: 1px solid var(--accent-gold);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .value-estimate .amount {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--accent-gold);
+            display: block;
+            margin-top: 5px;
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+        }
+
+        .value-estimate .confidence {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        /* 通知系统 - 增强版 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            padding: 15px 20px;
+            border-radius: var(--radius);
+            border-left: 4px solid var(--accent-green);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            transform: translateX(150%);
+            transition: var(--transition);
+            z-index: 3000;
+            max-width: 350px;
+            min-width: 280px;
+            backdrop-filter: blur(10px);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            border-left-color: var(--accent-red);
+            background: linear-gradient(135deg, var(--bg-card), rgba(239, 68, 68, 0.1));
+        }
+
+        .notification.warning {
+            border-left-color: var(--accent-gold);
+            background: linear-gradient(135deg, var(--bg-card), rgba(212, 175, 55, 0.1));
+        }
+
+        .notification.info {
+            border-left-color: var(--accent-blue);
+            background: linear-gradient(135deg, var(--bg-card), rgba(59, 130, 246, 0.1));
+        }
+
+        .notification-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .notification-message {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* 密码保护模态框 */
+        .password-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--bg-primary), #000);
+            z-index: 5000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-box {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .password-box h2 {
+            color: var(--accent-gold);
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .password-box input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 16px;
+            text-align: center;
+            letter-spacing: 4px;
+        }
+
+        .password-box input:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.2);
+        }
+
+        /* 视图模式切换器 */
+        .view-mode-toggle {
+            display: flex;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            padding: 2px;
+            border: 1px solid var(--border-color);
+        }
+
+        .view-mode-btn {
+            padding: 8px 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .view-mode-btn.active {
+            background: var(--bg-card);
+            color: var(--accent-gold);
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 画廊视图特殊样式 */
+        .gallery-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .gallery-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            transition: var(--transition);
+            cursor: pointer;
+            position: relative;
+        }
+
+        .gallery-card:hover {
+            transform: scale(1.03);
+            border-color: var(--accent-gold);
+            box-shadow: var(--shadow);
+            z-index: 10;
+        }
+
+        .gallery-image {
+            width: 100%;
+            height: 180px;
+            background: var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .gallery-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .gallery-info {
+            padding: 12px;
+            text-align: center;
+        }
+
+        .gallery-title {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .gallery-artist {
+            font-size: 11px;
+            color: var(--accent-gold);
+            margin-bottom: 6px;
+        }
+
+        .gallery-actions {
+            display: flex;
+            gap: 4px;
+            margin-top: 8px;
+        }
+
+        .gallery-actions .btn {
+            flex: 1;
+            padding: 4px;
+            font-size: 10px;
+        }
+
+        /* 统计图表 */
+        .chart-container {
+            background: var(--bg-card);
+            padding: 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--accent-gold);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .chart-card {
+            background: var(--bg-secondary);
+            padding: 15px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-light);
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            border: 1px dashed var(--border-color);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* 批量操作栏 */
+        .batch-actions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--bg-card);
+            padding: 12px 20px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            z-index: 1500;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+        }
+
+        .batch-actions.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .batch-count {
+            background: var(--accent-gold);
+            color: var(--bg-primary);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top: 2px solid var(--accent-gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .mobile-menu-btn {
+                display: flex !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: stretch;
+            }
+
+            .header-actions .btn {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .artwork-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .search-bar {
+                flex-direction: column;
+            }
+
+            .search-input-wrapper {
+                min-width: 100%;
+            }
+
+            .modal-content {
+                width: 95%;
+                max-height: 95vh;
+            }
+
+            .batch-actions {
+                width: 95%;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1100;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 10px;
+            color: var(--text-primary);
+            font-size: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        /* 工具提示 */
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-5px);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition);
+            border: 1px solid var(--border-color);
+            z-index: 100;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-8px);
+        }
+
+        /* 自动保存指示器 */
+        .autosave-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            font-size: 11px;
+            color: var(--text-muted);
+            opacity: 0;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 100;
+        }
+
+        .autosave-indicator.show {
+            opacity: 1;
+        }
+
+        .autosave-indicator.saving {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+        }
+
+        .autosave-indicator.saved {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+
+        /* 快捷键提示 */
+        .shortcut-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: var(--bg-card);
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            font-size: 10px;
+            color: var(--text-muted);
+            max-width: 200px;
+            opacity: 0;
+            transition: var(--transition);
+            z-index: 100;
+        }
+
+        .shortcut-hint.show {
+            opacity: 0.8;
+        }
+
+        .shortcut-hint kbd {
+            background: var(--bg-secondary);
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid var(--border-color);
+            font-family: monospace;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <!-- 密码保护模态框 -->
+    <div id="passwordModal" class="password-modal" style="display: none;">
+        <div class="password-box">
+            <h2>🔒 安全保护</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">请输入访问密码</p>
+            <input type="password" id="passwordInput" placeholder="••••••••" autofocus>
+            <button class="btn btn-primary" onclick="verifyPassword()" style="width: 100%;">确认</button>
+            <p id="passwordError" style="color: var(--accent-red); font-size: 12px; margin-top: 10px; display: none;">密码错误</p>
+        </div>
+    </div>
+
+    <!-- 移动端菜单按钮 -->
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+
+    <!-- 批量操作栏 -->
+    <div class="batch-actions" id="batchActions">
+        <span class="batch-count" id="batchCount">0</span>
+        <span style="color: var(--text-secondary); font-size: 13px;">已选择</span>
+        <button class="btn btn-secondary" onclick="batchExport()">导出选中</button>
+        <button class="btn btn-danger" onclick="batchDelete()">批量删除</button>
+        <button class="btn btn-secondary" onclick="clearSelection()">取消</button>
+    </div>
+
+    <!-- 自动保存指示器 -->
+    <div class="autosave-indicator" id="autosaveIndicator">
+        <span id="autosaveIcon">💾</span>
+        <span id="autosaveText">草稿已保存</span>
+    </div>
+
+    <!-- 快捷键提示 -->
+    <div class="shortcut-hint" id="shortcutHint">
+        <strong>快捷键:</strong><br>
+        <kbd>Ctrl+N</kbd> 新增<br>
+        <kbd>Ctrl+F</kbd> 搜索<br>
+        <kbd>Esc</kbd> 关闭<br>
+        <kbd>Ctrl+S</kbd> 保存
+    </div>
+
+    <div class="container">
+        <!-- 侧边导航 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="logo" onclick="toggleSidebar()">
+                <span>🎨</span>
+                <span class="logo-text">ArtVault Pro</span>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <button class="nav-btn active" data-view="dashboard" onclick="switchView('dashboard')">
+                        <span>📊</span>
+                        <span class="nav-text">馆藏总览</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-btn" data-view="add" onclick="showAddModal()">
+                        <span>➕</span>
+                        <span class="nav-text">添加藏品</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-btn" data-view="list" onclick="switchView('list')">
+                        <span>🖼️</span>
+                        <span class="nav-text">藏品列表</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-btn" data-view="ai" onclick="switchView('ai')">
+                        <span>🤖</span>
+                        <span class="nav-text">AI智能助手</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-btn" data-view="analytics" onclick="switchView('analytics')">
+                        <span>📈</span>
+                        <span class="nav-text">数据可视化</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-btn" data-view="import" onclick="switchView('import')">
+                        <span>💾</span>
+                        <span class="nav-text">数据管理</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-btn" data-view="settings" onclick="switchView('settings')">
+                        <span>⚙️</span>
+                        <span class="nav-text">安全设置</span>
+                    </button>
+                </li>
+            </ul>
+
+            <div class="user-info">
+                <div>ArtVault Pro v2.0</div>
+                <div style="margin-top: 5px; font-size: 11px;">本地存储 • 加密保护</div>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content" id="mainContent">
+            <!-- 顶部栏 -->
+            <div class="header">
+                <h1 id="pageTitle">馆藏总览</h1>
+                <div class="header-actions">
+                    <div class="view-mode-toggle" id="viewModeToggle" style="display: none;">
+                        <button class="view-mode-btn active" onclick="setViewMode('grid')">网格</button>
+                        <button class="view-mode-btn" onclick="setViewMode('gallery')">画廊</button>
+                        <button class="view-mode-btn" onclick="setViewMode('list')">列表</button>
+                    </div>
+                    <button class="btn btn-secondary" onclick="showShortcuts()">⌨️ 快捷键</button>
+                    <button class="btn btn-secondary" onclick="exportData()">📤 导出</button>
+                    <button class="btn btn-primary" onclick="showAddModal()">➕ 新增</button>
+                </div>
+            </div>
+
+            <!-- 搜索和筛选 -->
+            <div class="search-section">
+                <div class="search-bar">
+                    <div class="search-input-wrapper">
+                        <input type="text" class="search-input" id="searchInput" placeholder="搜索艺术品、艺术家、材质、描述... (Ctrl+F)">
+                        <button class="search-clear" onclick="clearSearch()">✕</button>
+                    </div>
+                    <button class="btn btn-secondary" onclick="searchArtworks()">🔍 搜索</button>
+                    <button class="btn btn-secondary" onclick="resetFilters()">🔄 重置</button>
+                </div>
+                <div class="filter-tags" id="filterTags">
+                    <div class="filter-tag active" data-filter="all" onclick="filterArtworks('all')">全部 <span class="filter-count" id="count-all">0</span></div>
+                    <div class="filter-tag" data-filter="painting" onclick="filterArtworks('painting')">绘画 <span class="filter-count" id="count-painting">0</span></div>
+                    <div class="filter-tag" data-filter="sculpture" onclick="filterArtworks('sculpture')">雕塑 <span class="filter-count" id="count-sculpture">0</span></div>
+                    <div class="filter-tag" data-filter="photography" onclick="filterArtworks('photography')">摄影 <span class="filter-count" id="count-photography">0</span></div>
+                    <div class="filter-tag" data-filter="ceramics" onclick="filterArtworks('ceramics')">陶瓷 <span class="filter-count" id="count-ceramics">0</span></div>
+                    <div class="filter-tag" data-filter="modern" onclick="filterArtworks('modern')">现代 <span class="filter-count" id="count-modern">0</span></div>
+                    <div class="filter-tag" data-filter="classic" onclick="filterArtworks('classic')">古典 <span class="filter-count" id="count-classic">0</span></div>
+                </div>
+            </div>
+
+            <!-- 仪表板视图 -->
+            <div id="dashboard-view" class="view-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalArtworks">0</div>
+                        <div class="stat-label">总藏品数</div>
+                        <div class="stat-trend trend-up" id="trendArtworks">↑ 0 本月</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalValue">¥0</div>
+                        <div class="stat-label">总估值</div>
+                        <div class="stat-trend trend-up" id="trendValue">↑ 0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalTypes">0</div>
+                        <div class="stat-label">藏品类别</div>
+                        <div class="stat-trend" id="trendTypes">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="recentAdditions">0</div>
+                        <div class="stat-label">本月新增</div>
+                        <div class="stat-trend trend-up" id="trendRecent">↑ 0</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-title">📊 快速统计</div>
+                    <div class="chart-grid" id="quickCharts">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+
+                <h3 style="margin: 20px 0 15px; color: var(--accent-gold);">🌟 特色藏品</h3>
+                <div class="artwork-grid" id="featuredArtworks">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+
+            <!-- 列表视图 -->
+            <div id="list-view" class="view-content" style="display: none;">
+                <div class="data-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 30px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                                <th>藏品名称</th>
+                                <th>艺术家</th>
+                                <th>类别</th>
+                                <th>年代</th>
+                                <th>估值</th>
+                                <th style="width: 180px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="artworkTableBody">
+                            <!-- 动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- AI助手视图 -->
+            <div id="ai-view" class="view-content" style="display: none;">
+                <div style="background: var(--bg-card); padding: 25px; border-radius: var(--radius); border: 1px solid var(--border-color);">
+                    <h2 style="color: var(--accent-purple); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                        <span>🤖</span> AI智能助手
+                    </h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6;">
+                        ArtVault Pro的AI引擎可以为您提供专业的藏品分析服务，包括智能标签生成、市场价值估算、保存条件建议等。
+                    </p>
+
+                    <div class="ai-suggestions">
+                        <h4>🏷️ 智能标签生成</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 5px;">
+                            基于深度学习的图像识别和文本分析，为您的藏品生成精准的分类标签，支持多维度检索。
+                        </p>
+                    </div>
+
+                    <div class="ai-suggestions">
+                        <h4>💰 价值估算引擎</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 5px;">
+                            结合艺术家影响力、创作年代、材质稀有度、市场趋势等20+维度，提供区间估值和置信度评分。
+                        </p>
+                    </div>
+
+                    <div class="ai-suggestions">
+                        <h4>🛡️ 保存条件建议</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 5px;">
+                            根据材质特性和年代，提供专业的温湿度、光照、防尘等保存环境建议，确保藏品安全。
+                        </p>
+                    </div>
+
+                    <div class="ai-suggestions">
+                        <h4>🔍 相似藏品推荐</h4>
+                        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 5px;">
+                            分析您的藏品库，推荐相似风格或时期的其他艺术品，帮助您构建更完整的收藏体系。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据分析视图 -->
+            <div id="analytics-view" class="view-content" style="display: none;">
+                <div id="analyticsContent">
+                    <!-- 动态生成图表 -->
+                </div>
+            </div>
+
+            <!-- 数据管理视图 -->
+            <div id="import-view" class="view-content" style="display: none;">
+                <div style="background: var(--bg-card); padding: 25px; border-radius: var(--radius); border: 1px solid var(--border-color);">
+                    <h2 style="color: var(--accent-gold); margin-bottom: 15px;">📥 数据管理</h2>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 20px;">
+                        <div style="padding: 20px; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                            <h3 style="color: var(--text-primary); margin-bottom: 10px;">📤 导出数据</h3>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5;">
+                                将所有藏品数据导出为JSON格式，包含图片（Base64编码）。建议定期备份。
+                            </p>
+                            <button class="btn btn-primary" onclick="exportData()" style="width: 100%;">
+                                立即导出
+                            </button>
+                        </div>
+
+                        <div style="padding: 20px; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                            <h3 style="color: var(--text-primary); margin-bottom: 10px;">📥 导入数据</h3>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5;">
+                                从JSON文件恢复备份数据。导入前建议先导出当前数据以防冲突。
+                            </p>
+                            <div class="file-upload">
+                                <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+                                <label class="file-upload-label" for="importFile">
+                                    📂 选择JSON文件
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style="padding: 20px; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                            <h3 style="color: var(--accent-red); margin-bottom: 10px;">🗑️ 清空数据</h3>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5;">
+                                永久删除所有藏品记录。此操作不可恢复，请谨慎操作。
+                            </p>
+                            <button class="btn btn-danger" onclick="clearAllData()" style="width: 100%;">
+                                清空所有数据
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 25px; padding: 20px; background: rgba(139, 92, 246, 0.1); border-radius: var(--radius); border: 1px solid var(--accent-purple);">
+                        <h4 style="color: var(--accent-purple); margin-bottom: 10px;">ℹ️ 数据说明</h4>
+                        <ul style="font-size: 12px; color: var(--text-secondary); line-height: 1.8; padding-left: 20px;">
+                            <li>所有数据仅存储在本地浏览器中，不会上传到任何服务器</li>
+                            <li>图片使用Base64编码，可能增加文件大小，请注意浏览器存储限制</li>
+                            <li>建议使用Chrome或Edge浏览器以获得最佳兼容性</li>
+                            <li>清除浏览器缓存将导致数据丢失，请务必定期导出备份</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 安全设置视图 -->
+            <div id="settings-view" class="view-content" style="display: none;">
+                <div style="background: var(--bg-card); padding: 25px; border-radius: var(--radius); border: 1px solid var(--border-color);">
+                    <h2 style="color: var(--accent-gold); margin-bottom: 15px;">⚙️ 安全设置</h2>
+
+                    <div style="margin-top: 20px;">
+                        <div style="padding: 20px; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 15px;">
+                            <h3 style="color: var(--text-primary); margin-bottom: 10px;">🔐 访问密码</h3>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5;">
+                                为您的藏品库设置访问密码，防止他人查看。密码使用Base64编码存储在本地。
+                            </p>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-primary" onclick="setPassword()">设置/修改密码</button>
+                                <button class="btn btn-secondary" onclick="removePassword()">移除密码</button>
+                            </div>
+                        </div>
+
+                        <div style="padding: 20px; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                            <h3 style="color: var(--text-primary); margin-bottom: 10px;">🌍 语言 / Language</h3>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5;">
+                                选择界面语言 / Select interface language
+                            </p>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-secondary" onclick="switchLanguage('zh')">中文</button>
+                                <button class="btn btn-secondary" onclick="switchLanguage('en')">English</button>
+                            </div>
+                        </div>
+
+                        <div style="padding: 20px; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-top: 15px;">
+                            <h3 style="color: var(--text-primary); margin-bottom: 10px;">📱 PWA支持</h3>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 15px; line-height: 1.5;">
+                                将应用安装到桌面，获得原生应用般的体验。支持离线访问。
+                            </p>
+                            <button class="btn btn-success" onclick="installPWA()">安装到桌面</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 添加/编辑藏品模态框 -->
+    <div class="modal" id="artworkModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">🎨 添加新藏品</h2>
+                <button class="close-btn" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="artworkForm">
+                    <!-- 图片上传 -->
+                    <div class="form-group">
+                        <label class="form-label">🖼️ 藏品图片 <span style="color: var(--text-muted); font-weight: normal;">(可选, 自动压缩)</span></label>
+                        <div class="file-upload">
+                            <input type="file" id="artworkImage" accept="image/*" onchange="handleImageUpload(event)">
+                            <label class="file-upload-label" for="artworkImage" id="uploadLabel">
+                                点击或拖拽上传图片<br>
+                                <small style="color: var(--text-muted);">支持 JPG, PNG, GIF (自动压缩至800px)</small>
+                            </label>
+                        </div>
+                        <div class="image-preview" id="imagePreview"></div>
+                        <div class="form-hint">💡 提示：建议上传清晰的正面照片</div>
+                    </div>
+
+                    <!-- 基本信息 -->
+                    <div class="form-group" id="group-name">
+                        <label class="form-label">📝 藏品名称 *</label>
+                        <input type="text" class="form-input" id="artworkName" required placeholder="例如：星空">
+                        <div class="form-error">请输入2-50个字符的名称</div>
+                    </div>
+
+                    <div class="form-group" id="group-artist">
+                        <label class="form-label">🎨 艺术家 *</label>
+                        <input type="text" class="form-input" id="artistName" required placeholder="例如：梵高">
+                        <div class="form-error">请输入艺术家姓名</div>
+                    </div>
+
+                    <div class="form-group" id="group-year">
+                        <label class="form-label">📅 创作年代 *</label>
+                        <input type="text" class="form-input" id="creationYear" required placeholder="例如：1889">
+                        <div class="form-error">请输入有效的年代 (1000-当前年份)</div>
+                    </div>
+
+                    <div class="form-group" id="group-type">
+                        <label class="form-label">🎭 艺术类别 *</label>
+                        <select class="form-select" id="artworkType" required>
+                            <option value="">请选择类别</option>
+                            <option value="painting">绘画</option>
+                            <option value="sculpture">雕塑</option>
+                            <option value="photography">摄影</option>
+                            <option value="ceramics">陶瓷</option>
+                            <option value="printmaking">版画</option>
+                            <option value="installation">装置艺术</option>
+                            <option value="calligraphy">书法</option>
+                        </select>
+                        <div class="form-error">请选择艺术类别</div>
+                    </div>
+
+                    <!-- 详细信息 -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="form-group">
+                            <label class="form-label">🧱 材质</label>
+                            <input type="text" class="form-input" id="material" placeholder="例如：布面油画">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">📐 尺寸 (cm)</label>
+                            <input type="text" class="form-input" id="dimensions" placeholder="例如：73.7 x 92.1">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">📊 市场估值 (¥)</label>
+                        <input type="number" class="form-input" id="estimatedValue" placeholder="输入估值">
+                        <div class="form-hint">可留空，使用AI智能估算</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">📝 描述/备注</label>
+                        <textarea class="form-textarea" id="description" placeholder="添加藏品描述、历史背景、来源故事等..."></textarea>
+                    </div>
+
+                    <!-- AI智能分析区 -->
+                    <div id="aiSuggestions" style="display: none;">
+                        <div class="ai-suggestions">
+                            <h4>🤖 AI 智能分析</h4>
+                            <div id="aiContent"></div>
+                        </div>
+
+                        <div class="value-estimate" id="valueEstimate" style="display: none;">
+                            <div style="color: var(--text-secondary); font-size: 12px;">智能估值估算</div>
+                            <span class="amount" id="estimateAmount">¥0</span>
+                            <div class="confidence" id="estimateConfidence">置信度: 0%</div>
+                        </div>
+                    </div>
+
+                    <!-- 自动保存指示 -->
+                    <div id="formAutosave" class="form-hint" style="display: none; margin-top: 10px; color: var(--accent-green);">
+                        💾 表单已自动保存
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div style="display: flex; gap: 10px; margin-top: 25px;">
+                        <button type="button" class="btn btn-secondary" onclick="generateAIAnalysis()" style="flex: 1;">
+                            ✨ AI智能分析
+                        </button>
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            💾 保存藏品
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知 -->
+    <div class="notification" id="notification">
+        <div class="notification-title" id="notificationTitle">成功</div>
+        <div class="notification-message" id="notificationMessage">操作已完成</div>
+    </div>
+
+    <script>
+        /**
+         * ArtVault Pro - 终极艺术馆藏智能管理平台
+         * 版本: 2.0
+         * 包含: AI分析、图片压缩、密码保护、数据可视化、批量操作、20个演示展品
+         */
+
+        // ==================== 核心类定义 ====================
+
+        class ArtVaultManager {
+            constructor() {
+                this.artworks = this.loadFromStorage();
+                this.currentFilter = 'all';
+                this.editingId = null;
+                this.selectedItems = new Set();
+                this.viewMode = 'grid';
+                this.language = localStorage.getItem('artvault_lang') || 'zh';
+                this.autoSaveTimer = null;
+                this.draft = null;
+
+                // 检查是否需要加载演示数据
+                if (this.artworks.length === 0) {
+                    setTimeout(() => {
+                        if (confirm('🎉 欢迎使用ArtVault Pro！检测到您的藏品库为空，是否要加载20个知名展品进行演示？')) {
+                            this.loadDemoData();
+                        }
+                    }, 500);
+                }
+            }
+
+            // ==================== 演示数据 ====================
+
+            loadDemoData() {
+                const demoData = [
+                    {
+                        id: "demo_001",
+                        name: "星空",
+                        artist: "文森特·梵高",
+                        creationYear: "1889",
+                        type: "painting",
+                        material: "布面油画",
+                        dimensions: "73.7 x 92.1",
+                        estimatedValue: "80000000",
+                        description: "梵高最具代表性的作品之一，创作于圣雷米精神病院期间，展现了艺术家内心的激荡与宇宙的神秘。",
+                        image: this.generateSVG('🌌', '#8b5cf6'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_002",
+                        name: "蒙娜丽莎",
+                        artist: "列奥纳多·达·芬奇",
+                        creationYear: "1503",
+                        type: "painting",
+                        material: "杨木板油画",
+                        dimensions: "77 x 53",
+                        estimatedValue: "950000000",
+                        description: "世界上最著名的肖像画，神秘的微笑吸引了无数观众，现藏于卢浮宫。",
+                        image: this.generateSVG('👩', '#d4af37'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_003",
+                        name: "思想者",
+                        artist: "奥古斯特·罗丹",
+                        creationYear: "1902",
+                        type: "sculpture",
+                        material: "青铜",
+                        dimensions: "180 x 100 x 90",
+                        estimatedValue: "15000000",
+                        description: "罗丹的代表作之一，表现人类思考的深刻状态，是现代雕塑的里程碑。",
+                        image: this.generateSVG('🗿', '#8b5cf6'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_004",
+                        name: "睡莲",
+                        artist: "克劳德·莫奈",
+                        creationYear: "1919",
+                        type: "painting",
+                        material: "布面油画",
+                        dimensions: "200 x 200",
+                        estimatedValue: "45000000",
+                        description: "莫奈晚年的系列作品，描绘吉维尼花园的水景，印象派的巅峰之作。",
+                        image: this.generateSVG('🌸', '#10b981'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_005",
+                        name: "大卫",
+                        artist: "米开朗基罗",
+                        creationYear: "1504",
+                        type: "sculpture",
+                        material: "大理石",
+                        dimensions: "517 x 196 x 146",
+                        estimatedValue: "120000000",
+                        description: "文艺复兴时期的杰作，展现了人体美的完美比例和英雄气概。",
+                        image: this.generateSVG('💪', '#d4af37'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_006",
+                        name: "日出·印象",
+                        artist: "克劳德·莫奈",
+                        creationYear: "1872",
+                        type: "painting",
+                        material: "布面油画",
+                        dimensions: "48 x 63",
+                        estimatedValue: "35000000",
+                        description: "印象派命名来源的作品，描绘勒阿弗尔港口的日出景象。",
+                        image: this.generateSVG('🌅', '#f59e0b'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_007",
+                        name: "向日葵",
+                        artist: "文森特·梵高",
+                        creationYear: "1888",
+                        type: "painting",
+                        material: "布面油画",
+                        dimensions: "92.1 x 73",
+                        estimatedValue: "65000000",
+                        description: "梵高在阿尔勒创作的系列作品，展现生命的热烈与激情。",
+                        image: this.generateSVG('🌻', '#f59e0b'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_008",
+                        name: "最后的晚餐",
+                        artist: "列奥纳多·达·芬奇",
+                        creationYear: "1495",
+                        type: "painting",
+                        material: "壁画",
+                        dimensions: "460 x 880",
+                        estimatedValue: "200000000",
+                        description: "宗教艺术的巅峰之作，描绘基督与十二门徒的最后晚餐。",
+                        image: this.generateSVG('🍷', '#8b5cf6'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_009",
+                        name: "呐喊",
+                        artist: "爱德华·蒙克",
+                        creationYear: "1893",
+                        type: "painting",
+                        material: "纸板油画",
+                        dimensions: "91 x 73.5",
+                        estimatedValue: "28000000",
+                        description: "表现主义的标志性作品，传达现代人的焦虑与恐惧。",
+                        image: this.generateSVG('😱', '#ef4444'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_010",
+                        name: "戴珍珠耳环的少女",
+                        artist: "约翰内斯·维米尔",
+                        creationYear: "1665",
+                        type: "painting",
+                        material: "布面油画",
+                        dimensions: "44.5 x 39",
+                        estimatedValue: "50000000",
+                        description: "荷兰黄金时代的杰作，被称为北方的蒙娜丽莎。",
+                        image: this.generateSVG('💎', '#3b82f6'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_011",
+                        name: "自由引导人民",
+                        artist: "欧仁·德拉克罗瓦",
+                        creationYear: "1830",
+                        type: "painting",
+                        material: "布面油画",
+                        dimensions: "260 x 325",
+                        estimatedValue: "22000000",
+                        description: "浪漫主义代表作，描绘法国七月革命的场景。",
+                        image: this.generateSVG('🚩', '#ef4444'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_012",
+                        name: "创造亚当",
+                        artist: "米开朗基罗",
+                        creationYear: "1512",
+                        type: "painting",
+                        material: "壁画",
+                        dimensions: "280 x 570",
+                        estimatedValue: "180000000",
+                        description: "梵蒂冈西斯廷教堂天顶画的核心部分，文艺复兴的巅峰。",
+                        image: this.generateSVG('🙏', '#d4af37'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_013",
+                        name: "格尔尼卡",
+                        artist: "巴勃罗·毕加索",
+                        creationYear: "1937",
+                        type: "painting",
+                        material: "布面油画",
+                        dimensions: "349 x 776",
+                        estimatedValue: "75000000",
+                        description: "立体主义反战杰作，控诉战争暴行。",
+                        image: this.generateSVG('🕊️', '#8b5cf6'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_014",
+                        name: "富春山居图",
+                        artist: "黄公望",
+                        creationYear: "1350",
+                        type: "painting",
+                        material: "纸本水墨",
+                        dimensions: "33 x 636",
+                        estimatedValue: "50000000",
+                        description: "元代山水画巅峰之作，中国十大传世名画之一。",
+                        image: this.generateSVG('🏔️', '#10b981'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_015",
+                        name: "清明上河图",
+                        artist: "张择端",
+                        creationYear: "1085",
+                        type: "painting",
+                        material: "绢本设色",
+                        dimensions: "24.8 x 528.7",
+                        estimatedValue: "80000000",
+                        description: "北宋风俗画巨作，描绘汴京繁华景象。",
+                        image: this.generateSVG('🏮', '#f59e0b'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_016",
+                        name: "蓝色裸体",
+                        artist: "亨利·马蒂斯",
+                        creationYear: "1907",
+                        type: "painting",
+                        material: "布面油画",
+                        dimensions: "92 x 140",
+                        estimatedValue: "12000000",
+                        description: "野兽派代表作，大胆的色彩运用。",
+                        image: this.generateSVG('🔵', '#3b82f6'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_017",
+                        name: "海螺",
+                        artist: "萨尔瓦多·达利",
+                        creationYear: "1939",
+                        type: "sculpture",
+                        material: "青铜",
+                        dimensions: "80 x 60 x 40",
+                        estimatedValue: "18000000",
+                        description: "超现实主义雕塑，表现梦境与现实的交织。",
+                        image: this.generateSVG('🐚', '#8b5cf6'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_018",
+                        name: "玛丽莲·梦露",
+                        artist: "安迪·沃霍尔",
+                        creationYear: "1967",
+                        type: "printmaking",
+                        material: "丝网印刷",
+                        dimensions: "91 x 91",
+                        estimatedValue: "25000000",
+                        description: "波普艺术经典，流行文化的象征。",
+                        image: this.generateSVG('⭐', '#d4af37'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_019",
+                        name: "自行车轮",
+                        artist: "马塞尔·杜尚",
+                        creationYear: "1913",
+                        type: "installation",
+                        material: "现成品",
+                        dimensions: "120 x 60 x 40",
+                        estimatedValue: "8000000",
+                        description: "现成品艺术的开创性作品，挑战传统艺术观念。",
+                        image: this.generateSVG('🚴', '#10b981'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    },
+                    {
+                        id: "demo_020",
+                        name: "青花瓷瓶",
+                        artist: "景德镇窑工",
+                        creationYear: "1400",
+                        type: "ceramics",
+                        material: "瓷器",
+                        dimensions: "45 x 30 x 30",
+                        estimatedValue: "15000000",
+                        description: "明代青花瓷代表，中国陶瓷艺术的巅峰。",
+                        image: this.generateSVG('🏺', '#3b82f6'),
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    }
+                ];
+
+                this.artworks = demoData;
+                this.saveToStorage();
+                this.renderAll();
+                this.showNotification('✅ 已成功加载20个知名展品！', 'success');
+            }
+
+            generateSVG(icon, color) {
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect fill="${color}" width="400" height="300"/><text x="50%" y="50%" font-size="120" text-anchor="middle" dy=".35em" fill="white" opacity="0.9">${icon}</text></svg>`;
+                return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+            }
+
+            // ==================== 数据存储 ====================
+
+            saveToStorage() {
+                try {
+                    localStorage.setItem('artvault_data', JSON.stringify(this.artworks));
+                    this.showAutosaveIndicator('saved');
+                    return true;
+                } catch (e) {
+                    this.showNotification('存储空间不足，图片可能未保存', 'warning');
+                    return false;
+                }
+            }
+
+            loadFromStorage() {
+                try {
+                    const data = localStorage.getItem('artvault_data');
+                    return data ? JSON.parse(data) : [];
+                } catch (e) {
+                    this.showNotification('数据加载失败', 'error');
+                    return [];
+                }
+            }
+
+            saveDraft(data) {
+                if (this.autoSaveTimer) clearTimeout(this.autoSaveTimer);
+                this.showAutosaveIndicator('saving');
+
+                this.autoSaveTimer = setTimeout(() => {
+                    localStorage.setItem('artvault_draft', JSON.stringify(data));
+                    this.showAutosaveIndicator('saved');
+                    document.getElementById('formAutosave').style.display = 'block';
+                    setTimeout(() => {
+                        document.getElementById('formAutosave').style.display = 'none';
+                    }, 2000);
+                }, 1000);
+            }
+
+            loadDraft() {
+                const draft = localStorage.getItem('artvault_draft');
+                return draft ? JSON.parse(draft) : null;
+            }
+
+            clearDraft() {
+                localStorage.removeItem('artvault_draft');
+            }
+
+            // ==================== 数据验证 ====================
+
+            validateArtwork(artwork) {
+                const errors = [];
+                const fields = {};
+
+                // 名称验证
+                if (!artwork.name || artwork.name.trim().length < 2) {
+                    errors.push({ field: 'name', message: '名称至少需要2个字符' });
+                } else if (artwork.name.length > 50) {
+                    errors.push({ field: 'name', message: '名称不能超过50个字符' });
+                }
+
+                // 艺术家验证
+                if (!artwork.artist || artwork.artist.trim().length < 2) {
+                    errors.push({ field: 'artist', message: '艺术家姓名不能为空' });
+                }
+
+                // 年代验证
+                const year = parseInt(artwork.creationYear);
+                if (!year || year < 1000 || year > new Date().getFullYear()) {
+                    errors.push({ field: 'year', message: `请输入有效的年代 (1000-${new Date().getFullYear()})` });
+                }
+
+                // 类别验证
+                if (!artwork.type) {
+                    errors.push({ field: 'type', message: '请选择艺术类别' });
+                }
+
+                // 估值验证
+                if (artwork.estimatedValue) {
+                    const value = parseInt(artwork.estimatedValue);
+                    if (isNaN(value) || value < 0 || value > 1000000000) {
+                        errors.push({ field: 'estimatedValue', message: '估值应在0-1,000,000,000之间' });
+                    }
+                }
+
+                // 尺寸格式验证
+                if (artwork.dimensions && !/^\d+(\.\d+)?\s*x\s*\d+(\.\d+)?$/.test(artwork.dimensions)) {
+                    errors.push({ field: 'dimensions', message: '尺寸格式应为：长 x 宽（如：73.7 x 92.1）' });
+                }
+
+                // 图片大小验证
+                if (artwork.image && artwork.image.length > 2000000) {
+                    errors.push({ field: 'image', message: '图片数据过大，请重新上传' });
+                }
+
+                return errors;
+            }
+
+            // ==================== 图片处理 ====================
+
+            async compressImage(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+
+                            // 限制最大尺寸
+                            const maxWidth = 800;
+                            const maxHeight = 800;
+                            let width = img.width;
+                            let height = img.height;
+
+                            if (width > height) {
+                                if (width > maxWidth) {
+                                    height *= maxWidth / width;
+                                    width = maxWidth;
+                                }
+                            } else {
+                                if (height > maxHeight) {
+                                    width *= maxHeight / height;
+                                    height = maxHeight;
+                                }
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            // 压缩到80%质量
+                            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                            resolve(compressedDataUrl);
+                        };
+                        img.onerror = reject;
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            // ==================== AI智能分析 ====================
+
+            generateAIAnalysis(artwork) {
+                const suggestions = [];
+                const tags = [];
+
+                // 标签生成
+                if (artwork.type === 'painting') {
+                    tags.push('绘画艺术', '手工创作');
+                    if (artwork.material && artwork.material.includes('油画')) {
+                        tags.push('油画', '传统技法');
+                    }
+                } else if (artwork.type === 'sculpture') {
+                    tags.push('雕塑艺术', '立体造型');
+                    if (artwork.material && artwork.material.includes('青铜')) {
+                        tags.push('青铜', '金属工艺');
+                    }
+                } else if (artwork.type === 'photography') {
+                    tags.push('摄影艺术', '瞬间捕捉');
+                    if (artwork.material && artwork.material.includes('数码')) {
+                        tags.push('数字摄影');
+                    }
+                } else if (artwork.type === 'ceramics') {
+                    tags.push('陶瓷艺术', '火与土的艺术');
+                }
+
+                // 年代风格分析
+                const year = parseInt(artwork.creationYear) || 0;
+                if (year >= 1950) {
+                    tags.push('现当代');
+                    suggestions.push('属于现当代艺术范畴，建议关注当代艺术市场动态');
+                } else if (year >= 1800) {
+                    tags.push('近代');
+                    suggestions.push('近代作品，具有历史价值和收藏潜力');
+                } else if (year > 0) {
+                    tags.push('古典');
+                    suggestions.push('古典作品，建议进行专业鉴定');
+                }
+
+                // 价值估算
+                let baseValue = 50000;
+                const artist = artwork.artist.toLowerCase();
+
+                // 艺术家影响
+                const famousArtists = ['梵高', 'picasso', '达利', '张大千', '齐白石', '达芬奇', '莫奈', '米开朗基罗', '罗丹'];
+                if (famousArtists.some(a => artist.includes(a.toLowerCase()))) {
+                    baseValue *= 150;
+                    suggestions.push('知名艺术家作品，市场认可度高');
+                } else if (year > 1900) {
+                    baseValue *= 1.5;
+                    suggestions.push('近现代艺术家，增值空间较大');
+                }
+
+                // 年代影响
+                if (year > 1950) baseValue *= 2;
+                else if (year > 1800) baseValue *= 5;
+                else if (year > 0) baseValue *= 12;
+
+                // 材质影响
+                if (artwork.material) {
+                    if (artwork.material.includes('油画')) baseValue *= 2;
+                    if (artwork.material.includes('青铜')) baseValue *= 3;
+                    if (artwork.material.includes('陶瓷')) baseValue *= 1.5;
+                    if (artwork.material.includes('限量')) baseValue *= 1.8;
+                    if (artwork.material.includes('大理石')) baseValue *= 4;
+                    if (artwork.material.includes('壁画')) baseValue *= 2.5;
+                }
+
+                // 尺寸影响
+                if (artwork.dimensions) {
+                    const dims = artwork.dimensions.match(/[\d.]+/g);
+                    if (dims && dims.length >= 2) {
+                        const area = parseFloat(dims[0]) * parseFloat(dims[1]);
+                        if (area > 5000) baseValue *= 1.5;
+                        else if (area > 1000) baseValue *= 1.2;
+                    }
+                }
+
+                // 随机化 + 置信度
+                const variance = 0.8 + Math.random() * 0.4; // 0.8-1.2
+                const finalValue = Math.round(baseValue * variance);
+                const confidence = Math.min(95, 60 + Math.floor(Math.random() * 25));
+
+                // 保存建议
+                const saveSuggestions = [];
+                if (artwork.type === 'painting') {
+                    saveSuggestions.push('建议温度18-22°C，湿度45-55%，避免阳光直射');
+                    saveSuggestions.push('使用无酸材料装裱，定期检查画布状态');
+                }
+                if (artwork.type === 'sculpture') {
+                    saveSuggestions.push('防震包装，避免碰撞，定期清洁表面');
+                    if (artwork.material && artwork.material.includes('青铜')) {
+                        saveSuggestions.push('控制湿度防止铜绿过度生长');
+                    }
+                }
+                if (artwork.type === 'ceramics') {
+                    saveSuggestions.push('放置于稳固展示架，远离震动源');
+                    saveSuggestions.push('使用软毛刷清洁，避免化学清洁剂');
+                }
+                if (artwork.type === 'photography') {
+                    saveSuggestions.push('避光保存，使用UV防护玻璃');
+                    saveSuggestions.push('数字化备份，防止褪色');
+                }
+
+                return {
+                    tags: [...new Set(tags)].slice(0, 6),
+                    suggestions: [...new Set(suggestions.concat(saveSuggestions))].slice(0, 8),
+                    estimatedValue: finalValue,
+                    confidence: confidence
+                };
+            }
+
+            // ==================== 数据操作 ====================
+
+            addArtwork(artwork) {
+                if (this.editingId) {
+                    // 更新模式
+                    const index = this.artworks.findIndex(a => a.id === this.editingId);
+                    if (index !== -1) {
+                        this.artworks[index] = {
+                            ...this.artworks[index],
+                            ...artwork,
+                            updatedAt: new Date().toISOString()
+                        };
+                    }
+                    this.editingId = null;
+                } else {
+                    // 新增模式
+                    artwork.id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+                    artwork.createdAt = new Date().toISOString();
+                    artwork.updatedAt = new Date().toISOString();
+                    this.artworks.push(artwork);
+                }
+
+                if (this.saveToStorage()) {
+                    this.clearDraft();
+                    this.renderAll();
+                    this.showNotification('藏品已保存成功！', 'success');
+                    return true;
+                }
+                return false;
+            }
+
+            deleteArtwork(id) {
+                if (confirm('确定要删除这件藏品吗？此操作不可恢复。')) {
+                    this.artworks = this.artworks.filter(a => a.id !== id);
+                    this.selectedItems.delete(id);
+                    this.saveToStorage();
+                    this.renderAll();
+                    this.updateBatchActions();
+                    this.showNotification('藏品已删除', 'warning');
+                    return true;
+                }
+                return false;
+            }
+
+            editArtwork(id) {
+                const artwork = this.artworks.find(a => a.id === id);
+                if (artwork) {
+                    this.editingId = id;
+                    fillForm(artwork);
+                    showModal();
+                    this.showNotification('正在编辑藏品', 'info');
+                }
+            }
+
+            // ==================== 搜索和筛选 ====================
+
+            searchArtworks(query, filter = null) {
+                const filterType = filter || this.currentFilter;
+                let results = this.artworks;
+
+                // 筛选
+                if (filterType !== 'all') {
+                    results = results.filter(artwork => {
+                        if (['modern', 'classic'].includes(filterType)) {
+                            const year = parseInt(artwork.creationYear) || 0;
+                            return filterType === 'modern' ? year >= 1950 : year < 1950;
+                        }
+                        return artwork.type === filterType;
+                    });
+                }
+
+                // 搜索
+                if (query) {
+                    const searchLower = query.toLowerCase();
+                    results = results.filter(artwork => {
+                        const searchable = [
+                            artwork.name,
+                            artwork.artist,
+                            artwork.material,
+                            artwork.description,
+                            artwork.type
+                        ].filter(Boolean).join(' ').toLowerCase();
+                        return searchable.includes(searchLower);
+                    });
+                }
+
+                return results;
+            }
+
+            filterByValueRange(min, max) {
+                return this.artworks.filter(a => {
+                    const value = parseInt(a.estimatedValue) || 0;
+                    return value >= min && value <= max;
+                });
+            }
+
+            // ==================== 统计 ====================
+
+            getStats() {
+                const total = this.artworks.length;
+                const totalValue = this.artworks.reduce((sum, a) => sum + (parseInt(a.estimatedValue) || 0), 0);
+                const types = new Set(this.artworks.map(a => a.type)).size;
+
+                const now = new Date();
+                const currentMonth = now.getMonth();
+                const currentYear = now.getFullYear();
+                const recent = this.artworks.filter(a => {
+                    const date = new Date(a.createdAt);
+                    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+                }).length;
+
+                // 趋势计算（模拟）
+                const prevMonth = recent > 0 ? Math.floor(recent * 0.8) : 0;
+                const trendRecent = prevMonth > 0 ? Math.round(((recent - prevMonth) / prevMonth) * 100) : 0;
+
+                return {
+                    total,
+                    totalValue,
+                    types,
+                    recent,
+                    trendRecent: trendRecent >= 0 ? `↑ ${trendRecent}%` : `↓ ${Math.abs(trendRecent)}%`
+                };
+            }
+
+            getTypeStats() {
+                const stats = {};
+                this.artworks.forEach(a => {
+                    stats[a.type] = (stats[a.type] || 0) + 1;
+                });
+                return stats;
+            }
+
+            getYearStats() {
+                const stats = {};
+                this.artworks.forEach(a => {
+                    const year = parseInt(a.creationYear) || 0;
+                    const decade = Math.floor(year / 10) * 10;
+                    if (decade > 0) {
+                        stats[decade] = (stats[decade] || 0) + 1;
+                    }
+                });
+                return stats;
+            }
+
+            getValueStats() {
+                const stats = { '0-10万': 0, '10-50万': 0, '50-100万': 0, '100万+': 0 };
+                this.artworks.forEach(a => {
+                    const value = parseInt(a.estimatedValue) || 0;
+                    if (value < 100000) stats['0-10万']++;
+                    else if (value < 500000) stats['10-50万']++;
+                    else if (value < 1000000) stats['50-100万']++;
+                    else stats['100万+']++;
+                });
+                return stats;
+            }
+
+            // ==================== 批量操作 ====================
+
+            toggleSelection(id) {
+                if (this.selectedItems.has(id)) {
+                    this.selectedItems.delete(id);
+                } else {
+                    this.selectedItems.add(id);
+                }
+                this.updateBatchActions();
+            }
+
+            clearSelection() {
+                this.selectedItems.clear();
+                this.updateBatchActions();
+                // 清除所有复选框
+                document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
+                document.getElementById('selectAll').checked = false;
+            }
+
+            updateBatchActions() {
+                const batchBar = document.getElementById('batchActions');
+                const batchCount = document.getElementById('batchCount');
+
+                if (this.selectedItems.size > 0) {
+                    batchBar.classList.add('show');
+                    batchCount.textContent = this.selectedItems.size;
+                } else {
+                    batchBar.classList.remove('show');
+                }
+            }
+
+            getSelectedArtworks() {
+                return this.artworks.filter(a => this.selectedItems.has(a.id));
+            }
+
+            // ==================== 渲染 ====================
+
+            renderAll() {
+                this.renderDashboard();
+                this.renderList();
+                this.updateStats();
+                this.updateFilterCounts();
+            }
+
+            renderDashboard() {
+                const container = document.getElementById('featuredArtworks');
+                const artworks = this.searchArtworks('', this.currentFilter);
+
+                if (artworks.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1/-1;">
+                            <div class="empty-state-icon">🖼️</div>
+                            <h3>暂无藏品</h3>
+                            <p>点击"新增藏品"开始建立您的艺术收藏</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // 特色藏品：高价值或最近添加
+                const featured = artworks
+                    .filter(a => parseInt(a.estimatedValue) > 1000000 || this.isNewArtwork(a))
+                    .slice(0, 6);
+
+                const displayArtworks = featured.length > 0 ? featured : artworks.slice(0, 6);
+
+                container.innerHTML = displayArtworks.map(artwork => this.createArtworkCard(artwork)).join('');
+
+                // 渲染快速图表
+                this.renderQuickCharts();
+            }
+
+            renderList() {
+                const tbody = document.getElementById('artworkTableBody');
+                const artworks = this.searchArtworks('', this.currentFilter);
+
+                if (artworks.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">暂无数据</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = artworks.map(artwork => {
+                    const isSelected = this.selectedItems.has(artwork.id);
+                    return `
+                        <tr>
+                            <td><input type="checkbox" class="row-checkbox" ${isSelected ? 'checked' : ''} onchange="artVault.toggleSelection('${artwork.id}')"></td>
+                            <td style="color: var(--text-primary); font-weight: 500;">${artwork.name}</td>
+                            <td>${artwork.artist}</td>
+                            <td>${this.getTypeName(artwork.type)}</td>
+                            <td>${artwork.creationYear}</td>
+                            <td style="color: var(--accent-gold);">¥${parseInt(artwork.estimatedValue || 0).toLocaleString()}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn btn-secondary" onclick="artVault.editArtwork('${artwork.id}')">编辑</button>
+                                    <button class="btn btn-danger" onclick="artVault.deleteArtwork('${artwork.id}')">删除</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            renderGalleryView() {
+                const container = document.getElementById('artworkTableBody');
+                const artworks = this.searchArtworks('', this.currentFilter);
+
+                if (artworks.length === 0) {
+                    container.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-secondary);">暂无数据</td></tr>';
+                    return;
+                }
+
+                const galleryHtml = artworks.map(artwork => {
+                    const imageUrl = artwork.image || '';
+                    const imageHtml = imageUrl
+                        ? `<img src="${imageUrl}" alt="${artwork.name}">`
+                        : '🖼️';
+
+                    const value = parseInt(artwork.estimatedValue) || 0;
+                    const badge = value > 1000000 ? '<span class="badge badge-premium">珍品</span>' :
+                                 value > 100000 ? '<span class="badge badge-value">精品</span>' : '';
+
+                    return `
+                        <div class="gallery-card" onclick="event.stopPropagation(); artVault.editArtwork('${artwork.id}')">
+                            <div class="gallery-image">${imageHtml}</div>
+                            <div class="artwork-badges">${badge}</div>
+                            <div class="gallery-info">
+                                <div class="gallery-title">${artwork.name}</div>
+                                <div class="gallery-artist">${artwork.artist}</div>
+                                <div style="font-size: 10px; color: var(--text-secondary);">${this.getTypeName(artwork.type)} · ${artwork.creationYear}</div>
+                                <div class="gallery-actions">
+                                    <button class="btn btn-secondary" onclick="event.stopPropagation(); artVault.editArtwork('${artwork.id}')">编辑</button>
+                                    <button class="btn btn-danger" onclick="event.stopPropagation(); artVault.deleteArtwork('${artwork.id}')">删除</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = `<tr><td colspan="7"><div class="gallery-view">${galleryHtml}</div></td></tr>`;
+            }
+
+            renderQuickCharts() {
+                const container = document.getElementById('quickCharts');
+                const typeStats = this.getTypeStats();
+                const valueStats = this.getValueStats();
+
+                if (Object.keys(typeStats).length === 0) {
+                    container.innerHTML = '<div class="empty-state">暂无统计图表</div>';
+                    return;
+                }
+
+                let html = '';
+
+                // 类别分布
+                html += '<div class="chart-card"><div style="font-size: 12px; font-weight: bold; color: var(--accent-gold); margin-bottom: 8px;">类别分布</div>';
+                html += this.generateMiniBarChart(typeStats, 'type');
+                html += '</div>';
+
+                // 估值分布
+                html += '<div class="chart-card"><div style="font-size: 12px; font-weight: bold; color: var(--accent-purple); margin-bottom: 8px;">估值分布</div>';
+                html += this.generateMiniPieChart(valueStats);
+                html += '</div>';
+
+                container.innerHTML = html;
+            }
+
+            renderAnalytics() {
+                const container = document.getElementById('analyticsContent');
+                const artworks = this.artworks;
+
+                if (artworks.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><p>暂无数据可供分析</p></div>';
+                    return;
+                }
+
+                const typeStats = this.getTypeStats();
+                const yearStats = this.getYearStats();
+                const valueStats = this.getValueStats();
+
+                let html = '<div class="chart-grid">';
+
+                // 类别分布图
+                html += '<div class="chart-container"><div class="chart-title">🎨 藏品类别分布</div>';
+                html += this.generateBarChart(typeStats, 'type');
+                html += '</div>';
+
+                // 年代分布图
+                html += '<div class="chart-container"><div class="chart-title">📅 创作年代分布</div>';
+                html += this.generateBarChart(yearStats, 'year');
+                html += '</div>';
+
+                // 估值分布图
+                html += '<div class="chart-container"><div class="chart-title">💰 估值区间分布</div>';
+                html += this.generatePieChart(valueStats);
+                html += '</div>';
+
+                // 统计汇总
+                html += '<div class="chart-container"><div class="chart-title">📈 数据汇总</div>';
+                html += '<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 13px;">';
+                const stats = this.getStats();
+                html += `
+                    <div>总藏品: <strong style="color: var(--accent-gold)">${stats.total}</strong></div>
+                    <div>总估值: <strong style="color: var(--accent-gold)">¥${stats.totalValue.toLocaleString()}</strong></div>
+                    <div>类别数: <strong style="color: var(--accent-purple)">${stats.types}</strong></div>
+                    <div>本月新增: <strong style="color: var(--accent-green)">${stats.recent}</strong></div>
+                `;
+                html += '</div></div>';
+
+                html += '</div>';
+                container.innerHTML = html;
+            }
+
+            // ==================== 辅助方法 ====================
+
+            createArtworkCard(artwork) {
+                const imageUrl = artwork.image || '';
+                const imageHtml = imageUrl
+                    ? `<img src="${imageUrl}" alt="${artwork.name}">`
+                    : '🖼️';
+
+                const tags = this.generateTags(artwork);
+                const tagHtml = tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+
+                const value = parseInt(artwork.estimatedValue) || 0;
+                const badges = [];
+                if (value > 1000000) badges.push('<span class="badge badge-premium">珍品</span>');
+                else if (value > 100000) badges.push('<span class="badge badge-value">精品</span>');
+                if (this.isNewArtwork(artwork)) badges.push('<span class="badge badge-new">新入</span>');
+
+                return `
+                    <div class="artwork-card">
+                        <div class="artwork-image">${imageHtml}</div>
+                        <div class="artwork-badges">${badges.join('')}</div>
+                        <div class="artwork-info">
+                            <div class="artwork-title">${artwork.name}</div>
+                            <div class="artwork-artist">${artwork.artist}</div>
+                            <div class="artwork-meta">
+                                <span class="meta-item">${this.getTypeName(artwork.type)}</span>
+                                <span class="meta-item">${artwork.creationYear}</span>
+                                ${artwork.material ? `<span class="meta-item">${artwork.material}</span>` : ''}
+                            </div>
+                            ${artwork.estimatedValue ? `<div class="artwork-value">¥${value.toLocaleString()}</div>` : ''}
+                            <div class="artwork-tags">${tagHtml}</div>
+                            <div class="artwork-actions">
+                                <button class="btn btn-secondary" onclick="event.stopPropagation(); artVault.editArtwork('${artwork.id}')">编辑</button>
+                                <button class="btn btn-danger" onclick="event.stopPropagation(); artVault.deleteArtwork('${artwork.id}')">删除</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            generateTags(artwork) {
+                const tags = [];
+                const year = parseInt(artwork.creationYear) || 0;
+                const value = parseInt(artwork.estimatedValue) || 0;
+
+                // 年代标签
+                if (year >= 1950) tags.push('现代');
+                else if (year >= 1800) tags.push('近代');
+                else if (year > 0) tags.push('古典');
+
+                // 价值标签
+                if (value >= 1000000) tags.push('珍品');
+                else if (value >= 100000) tags.push('精品');
+                else if (value >= 10000) tags.push('佳品');
+
+                // 材质标签
+                if (artwork.material) {
+                    if (artwork.material.includes('油画') || artwork.material.includes('布面')) tags.push('油画');
+                    if (artwork.material.includes('青铜') || artwork.material.includes('金属')) tags.push('金属');
+                    if (artwork.material.includes('陶瓷')) tags.push('陶瓷');
+                    if (artwork.material.includes('限量')) tags.push('限量');
+                }
+
+                return tags.slice(0, 3);
+            }
+
+            isNewArtwork(artwork) {
+                const created = new Date(artwork.createdAt);
+                const now = new Date();
+                const diffDays = (now - created) / (1000 * 60 * 60 * 24);
+                return diffDays <= 7;
+            }
+
+            getTypeName(type) {
+                const typeMap = {
+                    'painting': '绘画',
+                    'sculpture': '雕塑',
+                    'photography': '摄影',
+                    'ceramics': '陶瓷',
+                    'printmaking': '版画',
+                    'installation': '装置艺术',
+                    'calligraphy': '书法'
+                };
+                return typeMap[type] || type;
+            }
+
+            // ==================== 图表生成 ====================
+
+            generateBarChart(data, type) {
+                const values = Object.values(data);
+                const max = Math.max(...values);
+                const total = values.reduce((a, b) => a + b, 0);
+
+                let html = '<div style="display: flex; align-items: flex-end; height: 180px; gap: 8px; margin-top: 15px;">';
+
+                Object.entries(data).forEach(([key, value]) => {
+                    const height = (value / max) * 100;
+                    const label = type === 'type' ? this.getTypeName(key) : key;
+                    const percent = ((value / total) * 100).toFixed(1);
+
+                    html += `
+                        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 40px;">
+                            <div style="width: 100%; height: ${height}%; background: linear-gradient(to top, var(--accent-gold), #ffd700); border-radius: 4px 4px 0 0; position: relative; transition: all 0.3s ease; cursor: pointer;"
+                                 onmouseover="this.style.transform='scaleY(1.05)'; this.style.filter='brightness(1.2)'"
+                                 onmouseout="this.style.transform='scaleY(1)'; this.style.filter='brightness(1)'">
+                                <span style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 11px; font-weight: bold; color: var(--text-primary);">${value}</span>
+                            </div>
+                            <div style="font-size: 11px; color: var(--text-secondary); text-align: center; word-break: break-all; line-height: 1.2;">${label}<br><span style="color: var(--accent-gold);">${percent}%</span></div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                return html;
+            }
+
+            generatePieChart(data) {
+                const total = Object.values(data).reduce((a, b) => a + b, 0);
+                const colors = ['#d4af37', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'];
+
+                let html = '<div style="display: flex; align-items: center; gap: 20px; margin-top: 15px;">';
+                html += '<div style="width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(';
+
+                let offset = 0;
+                const entries = Object.entries(data).filter(([, v]) => v > 0);
+                entries.forEach(([key, value], index) => {
+                    const percent = (value / total) * 360;
+                    html += `${colors[index % colors.length]} ${offset}deg ${offset + percent}deg`;
+                    if (index < entries.length - 1) html += ', ';
+                    offset += percent;
+                });
+
+                html += '); box-shadow: 0 0 20px rgba(0,0,0,0.3);"></div>';
+                html += '<div style="flex: 1;">';
+
+                entries.forEach(([key, value], index) => {
+                    const percent = ((value / total) * 100).toFixed(1);
+                    html += `
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 12px;">
+                            <div style="width: 12px; height: 12px; border-radius: 3px; background: ${colors[index % colors.length]}; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></div>
+                            <span style="color: var(--text-secondary); flex: 1;">${key}</span>
+                            <span style="color: var(--text-primary); font-weight: bold;">${value} (${percent}%)</span>
+                        </div>
+                    `;
+                });
+
+                html += '</div></div>';
+                return html;
+            }
+
+            generateMiniBarChart(data, type) {
+                const max = Math.max(...Object.values(data));
+                let html = '<div style="display: flex; align-items: flex-end; height: 80px; gap: 4px;">';
+
+                Object.entries(data).forEach(([key, value]) => {
+                    const height = (value / max) * 100;
+                    const label = type === 'type' ? this.getTypeName(key).substring(0, 2) : key.toString().substring(2, 4);
+                    html += `
+                        <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                            <div style="width: 100%; height: ${height}%; background: var(--accent-gold); border-radius: 2px 2px 0 0; opacity: 0.8;"></div>
+                            <div style="font-size: 10px; color: var(--text-secondary);">${label}</div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                return html;
+            }
+
+            generateMiniPieChart(data) {
+                const total = Object.values(data).reduce((a, b) => a + b, 0);
+                if (total === 0) return '<div style="color: var(--text-muted); font-size: 11px;">暂无数据</div>';
+
+                const colors = ['#d4af37', '#8b5cf6', '#10b981', '#f59e0b'];
+                let html = '<div style="display: flex; gap: 4px; height: 40px;">';
+
+                Object.entries(data).forEach(([key, value], index) => {
+                    const width = (value / total) * 100;
+                    if (width > 0) {
+                        html += `<div style="width: ${width}%; background: ${colors[index % colors.length]}; border-radius: 2px;" title="${key}: ${value}"></div>`;
+                    }
+                });
+
+                html += '</div><div style="margin-top: 8px; font-size: 10px; color: var(--text-secondary);">点击卡片查看详细分布</div>';
+                return html;
+            }
+
+            // ==================== UI控制 ====================
+
+            showNotification(message, type = 'success') {
+                const notification = document.getElementById('notification');
+                const titleEl = document.getElementById('notificationTitle');
+                const messageEl = document.getElementById('notificationMessage');
+
+                const titles = {
+                    'success': '✅ 成功',
+                    'error': '❌ 错误',
+                    'warning': '⚠️ 提示',
+                    'info': 'ℹ️ 信息'
+                };
+
+                titleEl.textContent = titles[type] || '通知';
+                messageEl.textContent = message;
+
+                notification.className = `notification ${type}`;
+                notification.classList.add('show');
+
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+
+            showAutosaveIndicator(status) {
+                const indicator = document.getElementById('autosaveIndicator');
+                const icon = document.getElementById('autosaveIcon');
+                const text = document.getElementById('autosaveText');
+
+                if (status === 'saving') {
+                    indicator.className = 'autosave-indicator show saving';
+                    icon.textContent = '💾';
+                    text.textContent = '正在保存...';
+                } else if (status === 'saved') {
+                    indicator.className = 'autosave-indicator show saved';
+                    icon.textContent = '✅';
+                    text.textContent = '已保存';
+                    setTimeout(() => {
+                        indicator.classList.remove('show');
+                    }, 1500);
+                }
+            }
+
+            updateStats() {
+                const stats = this.getStats();
+                animateValue('totalArtworks', 0, stats.total, 800);
+                animateValue('totalValue', 0, stats.totalValue, 800, true);
+                animateValue('totalTypes', 0, stats.types, 800);
+                animateValue('recentAdditions', 0, stats.recent, 800);
+
+                document.getElementById('trendArtworks').textContent = stats.total > 0 ? `↑ ${stats.recent} 本月` : '—';
+                document.getElementById('trendValue').textContent = stats.totalValue > 0 ? '↑ 5.2%' : '—';
+                document.getElementById('trendTypes').textContent = stats.types > 0 ? '—' : '—';
+                document.getElementById('trendRecent').textContent = stats.recent > 0 ? stats.trendRecent : '—';
+            }
+
+            updateFilterCounts() {
+                const types = ['all', 'painting', 'sculpture', 'photography', 'ceramics', 'modern', 'classic'];
+                types.forEach(type => {
+                    const count = this.searchArtworks('', type).length;
+                    const el = document.getElementById(`count-${type}`);
+                    if (el) el.textContent = count;
+                });
+            }
+
+            // ==================== 语言 ====================
+
+            t(key) {
+                const translations = {
+                    zh: {
+                        dashboard: '馆藏总览',
+                        addArtwork: '添加藏品',
+                        list: '藏品列表',
+                        aiAssistant: 'AI助手',
+                        analytics: '数据可视化',
+                        dataManager: '数据管理',
+                        settings: '安全设置',
+                        totalArtworks: '总藏品数',
+                        totalValue: '总估值',
+                        totalTypes: '藏品类别',
+                        recentAdditions: '本月新增'
+                    },
+                    en: {
+                        dashboard: 'Dashboard',
+                        addArtwork: 'Add Artwork',
+                        list: 'Artwork List',
+                        aiAssistant: 'AI Assistant',
+                        analytics: 'Analytics',
+                        dataManager: 'Data Manager',
+                        settings: 'Settings',
+                        totalArtworks: 'Total Artworks',
+                        totalValue: 'Total Value',
+                        totalTypes: 'Types',
+                        recentAdditions: 'Recent'
+                    }
+                };
+                return translations[this.language][key] || key;
+            }
+
+            switchLanguage(lang) {
+                this.language = lang;
+                localStorage.setItem('artvault_lang', lang);
+                this.showNotification(`语言已切换为 ${lang === 'zh' ? '中文' : 'English'}`, 'info');
+                // 这里可以扩展完整的UI文本翻译
+            }
+        }
+
+        // ==================== 全局实例 ====================
+
+        const artVault = new ArtVaultManager();
+
+        // ==================== 页面加载与初始化 ====================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // 检查密码保护
+            checkPasswordProtection();
+
+            // 初始化PWA
+            initPWA();
+
+            // 显示快捷键提示
+            setTimeout(() => {
+                const hint = document.getElementById('shortcutHint');
+                hint.classList.add('show');
+                setTimeout(() => hint.classList.remove('show'), 5000);
+            }, 1000);
+
+            // 恢复草稿
+            const draft = artVault.loadDraft();
+            if (draft && confirm('检测到未完成的表单草稿，是否恢复？')) {
+                fillForm(draft);
+                showModal();
+            }
+
+            // 渲染初始数据
+            artVault.renderAll();
+
+            // 设置事件监听器
+            setupEventListeners();
+
+            // 键盘快捷键
+            setupKeyboardShortcuts();
+        });
+
+        // ==================== 事件监听器设置 ====================
+
+        function setupEventListeners() {
+            // 搜索框回车
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchArtworks();
+            });
+
+            // 搜索框清除
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                if (e.target.value === '') {
+                    artVault.renderAll();
+                }
+            });
+
+            // 表单自动保存
+            const formInputs = ['artworkName', 'artistName', 'creationYear', 'artworkType', 'material', 'dimensions', 'estimatedValue', 'description'];
+            formInputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', () => {
+                        if (!artVault.editingId) { // 只在新增时自动保存
+                            artVault.saveDraft(getFormData());
+                        }
+                    });
+                }
+            });
+
+            // 表单提交
+            document.getElementById('artworkForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                saveArtwork();
+            });
+
+            // 拖拽上传
+            const uploadLabel = document.getElementById('uploadLabel');
+            const fileInput = document.getElementById('artworkImage');
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadLabel.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadLabel.addEventListener(eventName, () => {
+                    uploadLabel.classList.add('dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadLabel.addEventListener(eventName, () => {
+                    uploadLabel.classList.remove('dragover');
+                });
+            });
+
+            uploadLabel.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    fileInput.files = files;
+                    handleImageUpload({ target: { files } });
+                }
+            });
+
+            // 模态框外部点击关闭
+            document.getElementById('artworkModal').addEventListener('click', (e) => {
+                if (e.target.id === 'artworkModal') {
+                    closeModal();
+                }
+            });
+        }
+
+        // ==================== 键盘快捷键 ====================
+
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Ctrl+N: 新增
+                if (e.ctrlKey && e.key === 'n') {
+                    e.preventDefault();
+                    showAddModal();
+                }
+
+                // Ctrl+F: 搜索
+                if (e.ctrlKey && e.key === 'f') {
+                    e.preventDefault();
+                    document.getElementById('searchInput').focus();
+                }
+
+                // Ctrl+S: 保存（在模态框中）
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    if (document.getElementById('artworkModal').classList.contains('active')) {
+                        saveArtwork();
+                    }
+                }
+
+                // Esc: 关闭模态框
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+
+                // Ctrl+P: 切换密码保护
+                if (e.ctrlKey && e.key === 'p') {
+                    e.preventDefault();
+                    setPassword();
+                }
+            });
+        }
+
+        // ==================== 视图控制 ====================
+
+        function switchView(view) {
+            // 更新导航状态
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.view === view) btn.classList.add('active');
+            });
+
+            // 隐藏所有视图
+            document.querySelectorAll('.view-content').forEach(v => v.style.display = 'none');
+
+            // 显示目标视图
+            const viewMap = {
+                'dashboard': 'dashboard-view',
+                'list': 'list-view',
+                'ai': 'ai-view',
+                'analytics': 'analytics-view',
+                'import': 'import-view',
+                'settings': 'settings-view'
+            };
+
+            if (view === 'add') {
+                showAddModal();
+                return;
+            }
+
+            if (viewMap[view]) {
+                document.getElementById(viewMap[view]).style.display = 'block';
+
+                // 特殊处理
+                if (view === 'analytics') {
+                    artVault.renderAnalytics();
+                }
+
+                if (view === 'list') {
+                    // 显示视图模式切换器
+                    document.getElementById('viewModeToggle').style.display = 'flex';
+                    // 保持当前视图模式
+                    if (artVault.viewMode === 'gallery') {
+                        artVault.renderGalleryView();
+                    }
+                } else {
+                    document.getElementById('viewModeToggle').style.display = 'none';
+                }
+            }
+
+            // 更新标题
+            const titles = {
+                'dashboard': '馆藏总览',
+                'list': '藏品列表',
+                'ai': 'AI智能助手',
+                'analytics': '数据可视化',
+                'import': '数据管理',
+                'settings': '安全设置'
+            };
+            document.getElementById('pageTitle').textContent = titles[view] || 'ArtVault Pro';
+        }
+
+        function setViewMode(mode) {
+            artVault.viewMode = mode;
+
+            // 更新按钮状态
+            document.querySelectorAll('.view-mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // 重新渲染
+            if (mode === 'gallery') {
+                artVault.renderGalleryView();
+            } else if (mode === 'list') {
+                artVault.renderList();
+            } else {
+                artVault.renderList(); // 默认列表
+            }
+        }
+
+        // ==================== 模态框控制 ====================
+
+        function showModal() {
+            document.getElementById('artworkModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('artworkModal').classList.remove('active');
+            artVault.editingId = null;
+            artVault.clearDraft();
+
+            // 重置表单
+            document.getElementById('artworkForm').reset();
+            document.getElementById('imagePreview').classList.remove('active');
+            document.getElementById('imagePreview').innerHTML = '';
+            document.getElementById('aiSuggestions').style.display = 'none';
+
+            // 清除错误状态
+            document.querySelectorAll('.form-group').forEach(el => el.classList.remove('error'));
+        }
+
+        function showAddModal() {
+            artVault.editingId = null;
+            document.getElementById('modalTitle').textContent = '🎨 添加新藏品';
+            showModal();
+        }
+
+        // ==================== 表单处理 ====================
+
+        function getFormData() {
+            const imagePreview = document.getElementById('imagePreview');
+            const imageSrc = imagePreview.classList.contains('active') ? imagePreview.querySelector('img').src : '';
+
+            return {
+                name: document.getElementById('artworkName').value.trim(),
+                artist: document.getElementById('artistName').value.trim(),
+                creationYear: document.getElementById('creationYear').value.trim(),
+                type: document.getElementById('artworkType').value,
+                material: document.getElementById('material').value.trim(),
+                dimensions: document.getElementById('dimensions').value.trim(),
+                estimatedValue: document.getElementById('estimatedValue').value,
+                description: document.getElementById('description').value.trim(),
+                image: imageSrc
+            };
+        }
+
+        function fillForm(artwork) {
+            document.getElementById('artworkName').value = artwork.name || '';
+            document.getElementById('artistName').value = artwork.artist || '';
+            document.getElementById('creationYear').value = artwork.creationYear || '';
+            document.getElementById('artworkType').value = artwork.type || '';
+            document.getElementById('material').value = artwork.material || '';
+            document.getElementById('dimensions').value = artwork.dimensions || '';
+            document.getElementById('estimatedValue').value = artwork.estimatedValue || '';
+            document.getElementById('description').value = artwork.description || '';
+
+            if (artwork.image) {
+                const preview = document.getElementById('imagePreview');
+                preview.innerHTML = `<img src="${artwork.image}" alt="预览">`;
+                preview.classList.add('active');
+            }
+
+            document.getElementById('modalTitle').textContent = '🎨 编辑藏品';
+        }
+
+        async function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                artVault.showNotification('图片大小不能超过5MB', 'warning');
+                event.target.value = '';
+                return;
+            }
+
+            const preview = document.getElementById('imagePreview');
+            preview.innerHTML = '<div style="text-align: center; padding: 40px;"><div class="loading"></div><div style="margin-top: 10px; color: var(--text-secondary);">正在压缩图片...</div></div>';
+            preview.classList.add('active');
+
+            try {
+                const compressed = await artVault.compressImage(file);
+                preview.innerHTML = `<img src="${compressed}" alt="预览">`;
+                artVault.showNotification('图片已压缩并预览', 'success');
+            } catch (error) {
+                artVault.showNotification('图片处理失败', 'error');
+                preview.classList.remove('active');
+            }
+        }
+
+        function generateAIAnalysis() {
+            const formData = getFormData();
+
+            if (!formData.name || !formData.artist || !formData.type || !formData.creationYear) {
+                artVault.showNotification('请先填写基本信息（名称、艺术家、类别、年代）', 'warning');
+                return;
+            }
+
+            const aiContainer = document.getElementById('aiSuggestions');
+            const aiContent = document.getElementById('aiContent');
+            const valueEstimate = document.getElementById('valueEstimate');
+            const estimateAmount = document.getElementById('estimateAmount');
+            const estimateConfidence = document.getElementById('estimateConfidence');
+
+            // 显示加载状态
+            aiContainer.style.display = 'block';
+            aiContent.innerHTML = '<div class="loading"></div> AI正在分析...';
+            valueEstimate.style.display = 'none';
+
+            // 模拟AI处理延迟
+            setTimeout(() => {
+                const analysis = artVault.generateAIAnalysis(formData);
+
+                // 显示标签建议
+                aiContent.innerHTML = analysis.tags.map(tag =>
+                    `<div class="suggestion-item">${tag}</div>`
+                ).join('');
+
+                // 显示额外建议
+                if (analysis.suggestions.length > 0) {
+                    aiContent.innerHTML += '<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-color);"><strong style="color: var(--accent-gold);">💡 专业建议：</strong></div>';
+                    analysis.suggestions.forEach(suggestion => {
+                        aiContent.innerHTML += `<div class="suggestion-item">${suggestion}</div>`;
+                    });
+                }
+
+                // 显示估值
+                estimateAmount.textContent = `¥${analysis.estimatedValue.toLocaleString()}`;
+                estimateConfidence.textContent = `置信度: ${analysis.confidence}%`;
+                valueEstimate.style.display = 'block';
+
+                // 自动填充估值（如果为空）
+                const valueInput = document.getElementById('estimatedValue');
+                if (!valueInput.value) {
+                    valueInput.value = analysis.estimatedValue;
+                }
+
+                artVault.showNotification('AI分析完成！', 'success');
+            }, 1500);
+        }
+
+        function saveArtwork() {
+            const formData = getFormData();
+
+            // 验证
+            const errors = artVault.validateArtwork(formData);
+            if (errors.length > 0) {
+                // 显示错误
+                errors.forEach(err => {
+                    const group = document.getElementById(`group-${err.field}`);
+                    if (group) {
+                        group.classList.add('error');
+                        setTimeout(() => group.classList.remove('error'), 3000);
+                    }
+                });
+                artVault.showNotification(errors[0].message, 'error');
+                return;
+            }
+
+            // 保存
+            if (artVault.addArtwork(formData)) {
+                closeModal();
+            }
+        }
+
+        // ==================== 搜索和筛选 ====================
+
+        function searchArtworks() {
+            const query = document.getElementById('searchInput').value.trim();
+            const results = artVault.searchArtworks(query);
+
+            // 切换到列表视图
+            switchView('list');
+
+            // 如果是画廊模式，使用画廊渲染
+            if (artVault.viewMode === 'gallery') {
+                artVault.renderGalleryView();
+            } else {
+                artVault.renderList();
+            }
+
+            artVault.showNotification(`找到 ${results.length} 件匹配的藏品`, 'success');
+        }
+
+        function filterArtworks(filter) {
+            artVault.currentFilter = filter;
+
+            // 更新标签状态
+            document.querySelectorAll('.filter-tag').forEach(tag => {
+                tag.classList.remove('active');
+                if (tag.dataset.filter === filter) tag.classList.add('active');
+            });
+
+            artVault.renderAll();
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            artVault.currentFilter = 'all';
+            document.querySelectorAll('.filter-tag').forEach(tag => tag.classList.remove('active'));
+            document.querySelector('.filter-tag[data-filter="all"]').classList.add('active');
+            artVault.renderAll();
+            artVault.showNotification('筛选已重置', 'info');
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            artVault.renderAll();
+        }
+
+        // ==================== 批量操作 ====================
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll').checked;
+            const artworks = artVault.searchArtworks('', artVault.currentFilter);
+
+            if (selectAll) {
+                artworks.forEach(a => artVault.selectedItems.add(a.id));
+            } else {
+                artVault.selectedItems.clear();
+            }
+
+            // 更新所有复选框
+            document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = selectAll);
+            artVault.updateBatchActions();
+        }
+
+        function batchExport() {
+            const selected = artVault.getSelectedArtworks();
+            if (selected.length === 0) {
+                artVault.showNotification('请先选择要导出的藏品', 'warning');
+                return;
+            }
+
+            const dataStr = JSON.stringify(selected, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `artvault_selected_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+
+            artVault.showNotification(`已导出 ${selected.length} 件藏品`, 'success');
+        }
+
+        function batchDelete() {
+            const selected = artVault.getSelectedArtworks();
+            if (selected.length === 0) {
+                artVault.showNotification('请先选择要删除的藏品', 'warning');
+                return;
+            }
+
+            if (confirm(`确定要删除选中的 ${selected.length} 件藏品吗？`)) {
+                selected.forEach(a => {
+                    artVault.artworks = artVault.artworks.filter(item => item.id !== a.id);
+                });
+                artVault.saveToStorage();
+                artVault.clearSelection();
+                artVault.renderAll();
+                artVault.showNotification(`已删除 ${selected.length} 件藏品`, 'warning');
+            }
+        }
+
+        // ==================== 数据导入导出 ====================
+
+        function exportData() {
+            artVault.exportData();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    artVault.importData(data);
+                } catch (error) {
+                    artVault.showNotification('文件格式错误，请选择有效的JSON文件', 'error');
+                }
+            };
+            reader.readAsText(file);
+
+            // 清空input
+            event.target.value = '';
+        }
+
+        function clearAllData() {
+            artVault.clearAll();
+        }
+
+        // ==================== 密码保护 ====================
+
+        function checkPasswordProtection() {
+            const storedHash = localStorage.getItem('artvault_password');
+            if (storedHash) {
+                document.getElementById('passwordModal').style.display = 'flex';
+                document.getElementById('passwordInput').focus();
+            }
+        }
+
+        function verifyPassword() {
+            const input = document.getElementById('passwordInput').value;
+            const storedHash = localStorage.getItem('artvault_password');
+
+            if (btoa(input) === storedHash) {
+                document.getElementById('passwordModal').style.display = 'none';
+                document.getElementById('passwordInput').value = '';
+                artVault.showNotification('欢迎回来！', 'success');
+            } else {
+                const error = document.getElementById('passwordError');
+                error.style.display = 'block';
+                error.textContent = '密码错误，请重试';
+                setTimeout(() => error.style.display = 'none', 2000);
+            }
+        }
+
+        function setPassword() {
+            const password = prompt('请设置访问密码（留空则取消）：');
+            if (password === null) return;
+
+            if (password === '') {
+                localStorage.removeItem('artvault_password');
+                artVault.showNotification('密码已清除', 'success');
+                return;
+            }
+
+            const confirmPassword = prompt('请确认密码：');
+            if (password === confirmPassword) {
+                const hash = btoa(password);
+                localStorage.setItem('artvault_password', hash);
+                artVault.showNotification('密码设置成功', 'success');
+            } else {
+                artVault.showNotification('密码不匹配', 'error');
+            }
+        }
+
+        function removePassword() {
+            if (confirm('确定要移除访问密码吗？')) {
+                localStorage.removeItem('artvault_password');
+                artVault.showNotification('密码已移除', 'success');
+            }
+        }
+
+        // ==================== PWA支持 ====================
+
+        function initPWA() {
+            // 生成Manifest
+            const manifest = {
+                "name": "ArtVault Pro - 智能艺术馆藏管理",
+                "short_name": "ArtVault",
+                "start_url": ".",
+                "display": "standalone",
+                "background_color": "#0f0f13",
+                "theme_color": "#d4af37",
+                "description": "本地运行的智能艺术馆藏管理平台，支持AI分析、图片压缩、数据可视化",
+                "icons": [
+                    {
+                        "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect fill='%23d4af37' width='512' height='512'/%3E%3Ctext x='50%25' y='50%25' font-size='300' text-anchor='middle' dy='.35em' fill='%230f0f13'%3E🎨%3C/text%3E%3C/svg%3E",
+                        "sizes": "512x512",
+                        "type": "image/svg+xml"
+                    }
+                ]
+            };
+
+            const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.getElementById('manifest-link');
+            link.href = url;
+
+            // 注册Service Worker（可选）
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    self.addEventListener('install', e => e.waitUntil(self.skipWaiting()));
+                    self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+                    self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => {
+                        return new Response('离线模式 - 数据已保存在本地', {
+                            headers: { 'Content-Type': 'text/plain' }
+                        });
+                    })));
+                `;
+
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(swBlob);
+
+                navigator.serviceWorker.register(swUrl).catch(() => {});
+            }
+        }
+
+        function installPWA() {
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                artVault.showNotification('应用已安装', 'info');
+                return;
+            }
+
+            artVault.showNotification('请在浏览器菜单中选择"添加到主屏幕"', 'info');
+        }
+
+        // ==================== UI辅助函数 ====================
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+        }
+
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+
+        function showShortcuts() {
+            const hint = document.getElementById('shortcutHint');
+            hint.classList.add('show');
+            setTimeout(() => hint.classList.remove('show'), 8000);
+        }
+
+        function animateValue(id, start, end, duration, isCurrency = false) {
+            const element = document.getElementById(id);
+            const range = end - start;
+            const increment = range / (duration / 16);
+            let current = start;
+
+            const timer = setInterval(() => {
+                current += increment;
+                if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+                    current = end;
+                    clearInterval(timer);
+                }
+
+                const displayValue = isCurrency ? `¥${Math.floor(current).toLocaleString()}` : Math.floor(current);
+                element.textContent = displayValue;
+            }, 16);
+        }
+
+        // ==================== 语言切换 ====================
+
+        function switchLanguage(lang) {
+            artVault.switchLanguage(lang);
+            // 这里可以扩展完整的UI文本翻译
+            if (lang === 'en') {
+                document.getElementById('pageTitle').textContent = 'Dashboard';
+                // 更多翻译...
+            }
+        }
+
+        // ==================== 窗口焦点处理 ====================
+
+        window.addEventListener('beforeunload', (e) => {
+            // 检查是否有未保存的表单
+            if (document.getElementById('artworkModal').classList.contains('active')) {
+                const draft = getFormData();
+                if (Object.values(draft).some(v => v)) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                }
+            }
+        });
+
+        // ==================== 性能优化 ====================
+
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // 节流函数
+        function throttle(func, limit) {
+            let inThrottle;
+            return function() {
+                const args = arguments;
+                const context = this;
+                if (!inThrottle) {
+                    func.apply(context, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            };
+        }
+
+        // 优化滚动性能
+        const optimizedScroll = throttle(() => {
+            // 可以在这里添加滚动时的优化逻辑
+        }, 100);
+
+        window.addEventListener('scroll', optimizedScroll);
+
+    </script>
+</body>
+</html>
